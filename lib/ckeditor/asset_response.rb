@@ -31,8 +31,18 @@ module Ckeditor
       !params[:CKEditor].blank?
     end
 
+    def ckeditor5?
+      !request.headers['CKEditor5'].blank?
+    end
+
     def file
-      !(ckeditor? || json?) ? params[:qqfile] : params[:upload]
+      if ckeditor? || json?
+        params[:upload]
+      elsif ckeditor5?
+        params[:files]
+      else
+        params[:qqfile]
+      end
     end
 
     def current_mode
@@ -58,6 +68,12 @@ module Ckeditor
     def success_ckeditor(relative_url_root = nil)
       {
         html: javascript_tag("#{FUNCTION}(#{params[:CKEditorFuncNum]}, '#{asset_url(relative_url_root)}');")
+      }
+    end
+
+    def success_ckeditor5(_relative_url_root = nil)
+      {
+        json: { url: asset.url }.to_json
       }
     end
 
@@ -104,6 +120,8 @@ module Ckeditor
         :json
       elsif ckeditor?
         :ckeditor
+      elsif ckeditor5?
+        :ckeditor5
       else
         :default
       end
